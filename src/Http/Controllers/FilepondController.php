@@ -29,19 +29,29 @@ class FilepondController extends BaseController
      */
     public function upload(Request $request)
     {
-        $file = $request->file('file')[0];
+        $file = $request->file('file');
 
-        $tempPath = config('filepond.temporary_files_path');
+        if (is_array($file)) {
+            foreach ($file as $f) {
+            
+                $filePath = tempnam(config('filepond.temporary_files_path'), "laravel-filepond");
+                $filePathParts = pathinfo($filePath);
 
-        $filePath = tempnam($tempPath, 'laravel-filepond');
-        $filePath .= '.' . $file->extension();
+                if(!$f->move($filePathParts['dirname'], $filePathParts['basename'])) {
+                    return Response::make('Could not save file', 500);
+                }
+                // return Response::make($this->filepond->getServerIdFromPath($filePath), 200);
+            }
+        } else {
 
-        $filePathParts = pathinfo($filePath);
-
-        if (!$file->move($filePathParts['dirname'], $filePathParts['basename'])) {
-            return Response::make('Could not save file', 500);
+            $filePath = tempnam(config('filepond.temporary_files_path'), "laravel-filepond");
+            $filePathParts = pathinfo($filePath);
+    
+            if(!$file->move($filePathParts['dirname'], $filePathParts['basename'])) {
+                return Response::make('Could not save file', 500);
+            }
         }
-
+        
         return Response::make($this->filepond->getServerIdFromPath($filePath), 200);
     }
 
